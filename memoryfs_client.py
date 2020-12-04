@@ -73,6 +73,7 @@ RSM_UNLOCKED = bytearray(b'\x00') * BLOCK_SIZE
 RSM_LOCKED = bytearray(b'\x01') * BLOCK_SIZE
 RSM_BLOCK = 0
 
+
 #### BLOCK LAYER 
 
 class DiskBlocks():
@@ -96,8 +97,12 @@ class DiskBlocks():
       # ljust does the padding with zeros
       putdata = bytearray(block_data.ljust(BLOCK_SIZE,b'\x00'))
       # Write block to server
-      # self.block[block_number] = putdata
-      ret = self.block_server[0].Put(block_number,putdata)
+      serverID = block_number % self.num_servers
+      physical_block_number = int(block_number / self.num_servers)
+      ret = self.block_server[serverID].Put(physical_block_number,putdata)
+      print("BLOCK NUM: ", block_number)
+      print("\tSERVER ID: ", serverID)
+      print("\tPHY BLOCK NUM: ", physical_block_number)
       if ret == -1:
         logging.error('Put: Server returns error')
         quit()
@@ -116,7 +121,9 @@ class DiskBlocks():
     if block_number in range(0,TOTAL_NUM_BLOCKS):
       # logging.debug ('\n' + str((self.block[block_number]).hex()))
       # return self.block[block_number]
-      data = self.block_server[0].Get(block_number)
+      serverID = block_number % self.num_servers
+      physical_block_number = int(block_number / self.num_servers)
+      data = self.block_server[serverID].Get(physical_block_number)
       # logging.debug ('Get: data type: ' + str(type(data)) + ', data: ' + str(data))
       return bytearray(data)
 
@@ -129,7 +136,9 @@ class DiskBlocks():
 
     logging.debug ('RSM: ' + str(block_number))
     if block_number in range(0,TOTAL_NUM_BLOCKS):
-      data = self.block_server[0].RSM(block_number)
+      serverID = block_number % self.num_servers
+      physical_block_number = int(block_number / self.num_servers)
+      data = self.block_server[serverID].RSM(physical_block_number)
       return bytearray(data)
 
     logging.error('RSM: Block number larger than TOTAL_NUM_BLOCKS: ' + str(block_number))
