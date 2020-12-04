@@ -1,4 +1,4 @@
-import pickle, logging 
+import pickle, logging, math
 import xmlrpc.client
 
 ##### File system constants
@@ -95,16 +95,19 @@ class DiskBlocks():
 
     if block_number in range(0,TOTAL_NUM_BLOCKS): 
       # ljust does the padding with zeros
-      # print("BLOCK DATA: ", str(block_data.hex()))
       putdata = bytearray(block_data.ljust(BLOCK_SIZE,b'\x00'))
 
-      # get RAID server mapping
-      serverID = block_number % (self.num_servers-1)
-      physical_block_number = int(block_number / (self.num_servers-1))
-      parityID = self.num_servers-1
-      # print("SERVER ID: ", serverID)
-      # print("PHY BLOCK NUM: ", physical_block_number)
-      # print("PARITY ID: ", parityID)
+      # get RAID5 server mapping
+      physical_block_number = math.floor(block_number/(self.num_servers-1))
+      parityID = (self.num_servers-1) - (physical_block_number%self.num_servers)
+      serverID = block_number%(self.num_servers-1)
+      if serverID >= parityID:
+          serverID += 1
+
+      # print("BLOCK NUMBER: ", block_number)
+      # print("\tPHY BLOCK NUM: ", physical_block_number)
+      # print("\tSERVER ID: ", serverID)
+      # print("\tPARITY ID: ", parityID)
 
       # Update parity server
       old_data = self.block_server[serverID].Get(physical_block_number)
@@ -155,9 +158,12 @@ class DiskBlocks():
       # logging.debug ('\n' + str((self.block[block_number]).hex()))
       # return self.block[block_number]
 
-      # get RAID server mapping
-      serverID = block_number % (self.num_servers-1)
-      physical_block_number = int(block_number / (self.num_servers-1))
+      # get RAID5 server mapping
+      physical_block_number = math.floor(block_number/(self.num_servers-1))
+      parityID = (self.num_servers-1) - (physical_block_number%self.num_servers)
+      serverID = block_number%(self.num_servers-1)
+      if serverID >= parityID:
+          serverID += 1
 
       data = self.block_server[serverID].Get(physical_block_number)
       # logging.debug ('Get: data type: ' + str(type(data)) + ', data: ' + str(data))
