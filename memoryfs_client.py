@@ -97,12 +97,20 @@ class DiskBlocks():
       # ljust does the padding with zeros
       putdata = bytearray(block_data.ljust(BLOCK_SIZE,b'\x00'))
       # Write block to server
-      serverID = block_number % self.num_servers
-      physical_block_number = int(block_number / self.num_servers)
+      serverID = block_number % (self.num_servers-1)
+      physical_block_number = int(block_number / (self.num_servers-1))
       ret = self.block_server[serverID].Put(physical_block_number,putdata)
       print("BLOCK NUM: ", block_number)
       print("\tSERVER ID: ", serverID)
       print("\tPHY BLOCK NUM: ", physical_block_number)
+      if ret == -1:
+        logging.error('Put: Server returns error')
+        quit()
+      return 0
+      # Update parity server
+      parityID = self.num_servers-1
+      putdata = putdata ^ self.block_server[serverID].Get(physical_block_number) ^ self.block_server[parityID].Get(physical_block_number)
+      ret = self.block_server[parityID].Put(physical_block_number,putdata)
       if ret == -1:
         logging.error('Put: Server returns error')
         quit()
@@ -121,8 +129,8 @@ class DiskBlocks():
     if block_number in range(0,TOTAL_NUM_BLOCKS):
       # logging.debug ('\n' + str((self.block[block_number]).hex()))
       # return self.block[block_number]
-      serverID = block_number % self.num_servers
-      physical_block_number = int(block_number / self.num_servers)
+      serverID = block_number % (self.num_servers-1)
+      physical_block_number = int(block_number / (self.num_servers-1))
       data = self.block_server[serverID].Get(physical_block_number)
       # logging.debug ('Get: data type: ' + str(type(data)) + ', data: ' + str(data))
       return bytearray(data)
@@ -136,8 +144,8 @@ class DiskBlocks():
 
     logging.debug ('RSM: ' + str(block_number))
     if block_number in range(0,TOTAL_NUM_BLOCKS):
-      serverID = block_number % self.num_servers
-      physical_block_number = int(block_number / self.num_servers)
+      serverID = block_number % (self.num_servers-1)
+      physical_block_number = int(block_number / (self.num_servers-1))
       data = self.block_server[serverID].RSM(physical_block_number)
       return bytearray(data)
 
