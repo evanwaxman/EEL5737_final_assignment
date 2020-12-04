@@ -188,12 +188,11 @@ if __name__ == "__main__":
   logging.basicConfig(filename='memoryfs.log', filemode='w', level=logging.DEBUG)
 
   # Replace with your UUID, encoded as a byte array
-  UUID = b'\x12\x34\x56\x78'
+  UUID = b'\x16\x32\x16\x73'
 
   # Initialize file system data
   logging.info('Initializing data structures...')
   RawBlocks = DiskBlocks(num_servers, server_url)
-  # Load blocks from dump file
   RawBlocks.InitializeBlocks(True,UUID)
 
   # Show file system information and contents of first few blocks

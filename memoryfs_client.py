@@ -95,26 +95,51 @@ class DiskBlocks():
 
     if block_number in range(0,TOTAL_NUM_BLOCKS): 
       # ljust does the padding with zeros
+      # print("BLOCK DATA: ", str(block_data.hex()))
       putdata = bytearray(block_data.ljust(BLOCK_SIZE,b'\x00'))
-      # Write block to server
+
+      # get RAID server mapping
       serverID = block_number % (self.num_servers-1)
       physical_block_number = int(block_number / (self.num_servers-1))
-      ret = self.block_server[serverID].Put(physical_block_number,putdata)
-      print("BLOCK NUM: ", block_number)
-      print("\tSERVER ID: ", serverID)
-      print("\tPHY BLOCK NUM: ", physical_block_number)
-      if ret == -1:
-        logging.error('Put: Server returns error')
-        quit()
-      return 0
-      # Update parity server
       parityID = self.num_servers-1
-      putdata = putdata ^ self.block_server[serverID].Get(physical_block_number) ^ self.block_server[parityID].Get(physical_block_number)
-      ret = self.block_server[parityID].Put(physical_block_number,putdata)
+      # print("SERVER ID: ", serverID)
+      # print("PHY BLOCK NUM: ", physical_block_number)
+      # print("PARITY ID: ", parityID)
+
+      # Update parity server
+      old_data = self.block_server[serverID].Get(physical_block_number)
+      old_data_int = int.from_bytes(old_data, "little")
+      old_data_str = str(old_data.hex())
+
+      new_data = putdata
+      new_data_int = int.from_bytes(new_data, "little")
+      new_data_str = str(new_data.hex())
+
+      old_parity = self.block_server[parityID].Get(physical_block_number)
+      old_parity_int = int.from_bytes(old_parity, "little")
+      old_parity_str = str(old_parity.hex())
+
+      new_parity_int = (new_data_int ^ old_data_int) ^ old_parity_int
+      new_parity = bytearray((new_parity_int.to_bytes(new_parity_int.bit_length(), byteorder='little')).ljust(BLOCK_SIZE,b'\x00'))
+      new_parity_str = str(new_parity.hex())
+
+      # print("\tOLD DATA: ", old_data_str)
+      # print("\tNEW DATA: ", new_data_str)
+      # print("\tOLD PARITY: ", old_parity_str)
+      # print("\tNEW PARITY: ", new_parity_str)
+
+      ret = self.block_server[parityID].Put(physical_block_number,new_parity)
+      if ret == -1:
+        logging.error('Put: Server returns error')
+        quit()
+
+      # Write block to server
+      ret = self.block_server[serverID].Put(physical_block_number,putdata)
       if ret == -1:
         logging.error('Put: Server returns error')
         quit()
       return 0
+
     else:
       logging.error('Put: Block out of range: ' + str(block_number))
       quit()
@@ -129,8 +154,11 @@ class DiskBlocks():
     if block_number in range(0,TOTAL_NUM_BLOCKS):
       # logging.debug ('\n' + str((self.block[block_number]).hex()))
       # return self.block[block_number]
+
+      # get RAID server mapping
       serverID = block_number % (self.num_servers-1)
       physical_block_number = int(block_number / (self.num_servers-1))
+
       data = self.block_server[serverID].Get(physical_block_number)
       # logging.debug ('Get: data type: ' + str(type(data)) + ', data: ' + str(data))
       return bytearray(data)
