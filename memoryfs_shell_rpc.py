@@ -1,4 +1,4 @@
-import pickle, logging, time
+import pickle, logging, time, sys
 
 from memoryfs_client import *
 
@@ -167,6 +167,22 @@ class FSShell():
 
 if __name__ == "__main__":
 
+  if len(sys.argv) < 2:
+    print("Arguments to specify # of servers and their corresponding address:port-endpoints is required.")
+    quit()
+  elif sys.argv[1].isdigit() == False:
+    print("First argument needs to be an integer specifying # of servers being used.")
+    quit()
+  elif len(sys.argv)-2 != int(sys.argv[1]):
+    print("An address:port-endpoint argument is required for each server.")
+    quit()
+  else:
+    num_servers = int(sys.argv[1])
+    server_url = []
+    for i in range(0,num_servers):
+      url = "http://" + sys.argv[2+i]
+      server_url.append(url)
+
   # Initialize file for logging
   # Changer logging level to INFO to remove debugging messages
   logging.basicConfig(filename='memoryfs.log', filemode='w', level=logging.DEBUG)
@@ -176,7 +192,8 @@ if __name__ == "__main__":
 
   # Initialize file system data
   logging.info('Initializing data structures...')
-  RawBlocks = DiskBlocks('http://localhost:8000')
+  # RawBlocks = DiskBlocks('http://localhost:8000')
+  RawBlocks = DiskBlocks(num_servers, server_url)
   # Load blocks from dump file
   RawBlocks.InitializeBlocks(False,UUID)
 

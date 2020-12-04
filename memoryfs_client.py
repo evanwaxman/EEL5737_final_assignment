@@ -76,9 +76,11 @@ RSM_BLOCK = 0
 #### BLOCK LAYER 
 
 class DiskBlocks():
-  def __init__(self, server_url):
-
-    self.block_server = xmlrpc.client.ServerProxy(server_url, use_builtin_types=True)
+  def __init__(self, num_servers, server_url):
+    self.num_servers = num_servers
+    self.block_server = []
+    for url in server_url:
+      self.block_server.append(xmlrpc.client.ServerProxy(url, use_builtin_types=True))
 
 ## Put: interface to write a raw block of data to the block indexed by block number
 ## Blocks are padded with zeroes up to BLOCK_SIZE
@@ -95,7 +97,7 @@ class DiskBlocks():
       putdata = bytearray(block_data.ljust(BLOCK_SIZE,b'\x00'))
       # Write block to server
       # self.block[block_number] = putdata
-      ret = self.block_server.Put(block_number,putdata)
+      ret = self.block_server[0].Put(block_number,putdata)
       if ret == -1:
         logging.error('Put: Server returns error')
         quit()
@@ -114,7 +116,7 @@ class DiskBlocks():
     if block_number in range(0,TOTAL_NUM_BLOCKS):
       # logging.debug ('\n' + str((self.block[block_number]).hex()))
       # return self.block[block_number]
-      data = self.block_server.Get(block_number)
+      data = self.block_server[0].Get(block_number)
       # logging.debug ('Get: data type: ' + str(type(data)) + ', data: ' + str(data))
       return bytearray(data)
 
@@ -127,7 +129,7 @@ class DiskBlocks():
 
     logging.debug ('RSM: ' + str(block_number))
     if block_number in range(0,TOTAL_NUM_BLOCKS):
-      data = self.block_server.RSM(block_number)
+      data = self.block_server[0].RSM(block_number)
       return bytearray(data)
 
     logging.error('RSM: Block number larger than TOTAL_NUM_BLOCKS: ' + str(block_number))

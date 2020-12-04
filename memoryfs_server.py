@@ -1,4 +1,4 @@
-import pickle, logging
+import pickle, logging, sys
 
 from memoryfs_client import BLOCK_SIZE, TOTAL_NUM_BLOCKS, RSM_LOCKED
 
@@ -20,10 +20,16 @@ class DiskBlocks():
 
 if __name__ == "__main__":
 
+  if len(sys.argv) > 2:
+    print("Only one command-line argument to specify port # allowed")
+    quit()
+  else:
+    portNum = int(sys.argv[1])
+
   RawBlocks = DiskBlocks()
 
   # Create server
-  server = SimpleXMLRPCServer(("localhost", 8000), requestHandler=RequestHandler) 
+  server = SimpleXMLRPCServer(("localhost", portNum), requestHandler=RequestHandler) 
 
   def Get(block_number):
     result = RawBlocks.block[block_number]
