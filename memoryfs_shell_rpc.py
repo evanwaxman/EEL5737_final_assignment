@@ -117,48 +117,48 @@ class FSShell():
         if len(splitcmd) != 2:
           print ("Error: cd requires one argument")
         else:
-          self.FileObject.RawBlocks.Acquire()
+          # self.FileObject.RawBlocks.Acquire()
           self.cd(splitcmd[1])
-          self.FileObject.RawBlocks.Release()
+          # self.FileObject.RawBlocks.Release()
       elif splitcmd[0] == "cat":
         if len(splitcmd) != 2:
           print ("Error: cat requires one argument")
         else:
-          self.FileObject.RawBlocks.Acquire()
+          # self.FileObject.RawBlocks.Acquire()
           self.cat(splitcmd[1])
-          self.FileObject.RawBlocks.Release()
+          # self.FileObject.RawBlocks.Release()
       elif splitcmd[0] == "mkdir":
         if len(splitcmd) != 2:
           print ("Error: mkdir requires one argument")
         else:
-          self.FileObject.RawBlocks.Acquire()
+          # self.FileObject.RawBlocks.Acquire()
           self.mkdir(splitcmd[1])
-          self.FileObject.RawBlocks.Release()
+          # self.FileObject.RawBlocks.Release()
       elif splitcmd[0] == "create":
         if len(splitcmd) != 2:
           print ("Error: create requires one argument")
         else:
-          self.FileObject.RawBlocks.Acquire()
+          # self.FileObject.RawBlocks.Acquire()
           self.create(splitcmd[1])
-          self.FileObject.RawBlocks.Release()
+          # self.FileObject.RawBlocks.Release()
       elif splitcmd[0] == "ln":
         if len(splitcmd) != 3:
           print ("Error: ln requires two arguments")
         else:
-          self.FileObject.RawBlocks.Acquire()
+          # self.FileObject.RawBlocks.Acquire()
           self.link(splitcmd[1], splitcmd[2])
-          self.FileObject.RawBlocks.Release()
+          # self.FileObject.RawBlocks.Release()
       elif splitcmd[0] == "append":
         if len(splitcmd) != 3:
           print ("Error: append requires two arguments")
         else:
-          self.FileObject.RawBlocks.Acquire()
+          # self.FileObject.RawBlocks.Acquire()
           self.append(splitcmd[1], splitcmd[2])
-          self.FileObject.RawBlocks.Release()
+          # self.FileObject.RawBlocks.Release()
       elif splitcmd[0] == "ls":
-        self.FileObject.RawBlocks.Acquire()
+        # self.FileObject.RawBlocks.Acquire()
         self.ls()
-        self.FileObject.RawBlocks.Release()
+        # self.FileObject.RawBlocks.Release()
       elif splitcmd[0] == "exit":
         return
       else:
@@ -192,10 +192,9 @@ if __name__ == "__main__":
 
   # Initialize file system data
   logging.info('Initializing data structures...')
-  # RawBlocks = DiskBlocks('http://localhost:8000')
   RawBlocks = DiskBlocks(num_servers, server_url)
   # Load blocks from dump file
-  RawBlocks.InitializeBlocks(False,UUID)
+  RawBlocks.InitializeBlocks(True,UUID)
 
   # Show file system information and contents of first few blocks
   RawBlocks.PrintFSInfo()
@@ -203,7 +202,7 @@ if __name__ == "__main__":
 
   # Initialize FileObject inode
   FileObject = FileName(RawBlocks)
-  # FileObject.InitRootInode()
+  FileObject.InitRootInode()
 
   myshell = FSShell(FileObject)
   myshell.Interpreter()
