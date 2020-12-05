@@ -161,6 +161,8 @@ class FSShell():
         # self.FileObject.RawBlocks.Release()
       elif splitcmd[0] == "exit":
         return
+      elif splitcmd[0] == "test":
+        self.FileObject.RawBlocks.TestErrorCorrection()
       else:
         print ("command " + splitcmd[0] + "not valid.\n")
 

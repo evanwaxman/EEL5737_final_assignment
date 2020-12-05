@@ -25,11 +25,16 @@ class DiskBlocks():
 
 if __name__ == "__main__":
 
-  if len(sys.argv) > 2:
-    print("Only one command-line argument to specify port # allowed")
+  if len(sys.argv) > 3:
+    print("Command-line arguments should be: <port_number> <optional: corrupter_block>")
     quit()
   else:
     portNum = int(sys.argv[1])
+    if len(sys.argv) == 3:
+      damaged_block_flag = 1
+      damaged_block_number = int(sys.argv[2])
+    else:
+      damaged_block_flag = 0
 
   RawBlocks = DiskBlocks()
 
@@ -45,6 +50,11 @@ if __name__ == "__main__":
     if new_cs != old_cs:
       print("ERROR: CHECKSUM MISMATCH")
       return -1
+    elif damaged_block_flag:
+      if block_number == damaged_block_number:
+        print("ERROR: CHECKSUM MISMATCH")
+        return -1
+
     return result
 
   server.register_function(Get)

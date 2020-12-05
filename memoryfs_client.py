@@ -74,6 +74,11 @@ RSM_LOCKED = bytearray(b'\x01') * BLOCK_SIZE
 RSM_BLOCK = 0
 
 
+def byte_xor(b1, b2):
+  return bytes([_a ^ _b for _a, _b in zip(b1, b2)])
+
+
+
 #### BLOCK LAYER 
 
 class DiskBlocks():
@@ -111,6 +116,13 @@ class DiskBlocks():
 
       # Update parity server
       old_data = self.block_server[serverID].Get(physical_block_number)
+      if old_data == -1:
+        corrected_data = self.ErrorCorrect(physical_block_number, serverID)
+        ret = self.block_server[serverID].Put(physical_block_number,corrected_data)
+        if ret == -1:
+          logging.error('Put: Server returns error')
+          quit()
+        old_data = corrected_data
       old_data_int = int.from_bytes(old_data, "little")
       old_data_str = str(old_data.hex())
 
@@ -119,6 +131,13 @@ class DiskBlocks():
       new_data_str = str(new_data.hex())
 
       old_parity = self.block_server[parityID].Get(physical_block_number)
+      if old_parity == -1:
+        corrected_data = self.ErrorCorrect(physical_block_number, parityID)
+        ret = self.block_server[parityID].Put(physical_block_number,corrected_data)
+        if ret == -1:
+          logging.error('Put: Server returns error')
+          quit()
+        old_parity = corrected_data
       old_parity_int = int.from_bytes(old_parity, "little")
       old_parity_str = str(old_parity.hex())
 
@@ -166,11 +185,41 @@ class DiskBlocks():
           serverID += 1
 
       data = self.block_server[serverID].Get(physical_block_number)
+      if data == -1:
+        corrected_data = self.ErrorCorrect(physical_block_number, serverID)
+        ret = self.block_server[serverID].Put(physical_block_number,corrected_data)
+        if ret == -1:
+          logging.error('Put: Server returns error')
+          quit()
+        data = corrected_data
+
       # logging.debug ('Get: data type: ' + str(type(data)) + ', data: ' + str(data))
       return bytearray(data)
 
     logging.error('Get: Block number larger than TOTAL_NUM_BLOCKS: ' + str(block_number))
     quit()
+
+## ErrorCorrect: if a checksum mismatch occurs, this function will call Get() 
+## on each server block to reconstruct the corrupted data
+
+  def ErrorCorrect(self, physical_block_number, corrupted_serverID):
+    corrected_data = bytearray(BLOCK_SIZE)
+
+    for i in range(0, self.num_servers):
+      if (i != corrupted_serverID):
+        corrected_data = byte_xor(corrected_data, self.block_server[i].Get(physical_block_number))
+
+    return corrected_data
+
+## TestErrorCorrection: forces a checksum mismatch to validate if ErrorCorrect() works
+
+  def TestErrorCorrection(self):
+    original_data = self.block_server[0].Get(0)
+    corrected_data = self.ErrorCorrect(0, 0)
+    print("TESTING ERROR CORRECTION...")
+    print("\tORIGINAL DATA = ", bytearray(original_data))
+    print("\tCORRUPTED DATA = ", bytearray(BLOCK_SIZE))
+    print("\tCORRECTED DATA = ", bytearray(corrected_data))
 
 ## RSM: read and set memory equivalent
 
