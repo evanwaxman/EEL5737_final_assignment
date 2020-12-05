@@ -1,4 +1,4 @@
-import pickle, logging, sys
+import pickle, logging, sys, hashlib
 
 from memoryfs_client import BLOCK_SIZE, TOTAL_NUM_BLOCKS, RSM_LOCKED
 
@@ -12,11 +12,16 @@ class RequestHandler(SimpleXMLRPCRequestHandler):
 class DiskBlocks():
   def __init__(self):
     # This class stores the raw block array
-    self.block = []                                            
+    self.block = []  
+    self.cs_block = []                                          
     # Initialize raw blocks 
     for i in range (0, TOTAL_NUM_BLOCKS):
       putdata = bytearray(BLOCK_SIZE)
+      value_string = str(putdata)
+      value_byte = bytes(value_string, 'utf-8')
+      cs = hashlib.md5(value_byte).digest()
       self.block.insert(i,putdata)
+      self.cs_block.insert(i,cs)
 
 if __name__ == "__main__":
 
@@ -33,12 +38,23 @@ if __name__ == "__main__":
 
   def Get(block_number):
     result = RawBlocks.block[block_number]
+    value_string = str(result)
+    value_byte = bytes(value_string, 'utf-8')
+    new_cs = hashlib.md5(value_byte).digest()
+    old_cs = RawBlocks.cs_block[block_number]
+    if new_cs != old_cs:
+      print("ERROR: CHECKSUM MISMATCH")
+      return -1
     return result
 
   server.register_function(Get)
 
   def Put(block_number, data):
     RawBlocks.block[block_number] = data
+    value_string = str(data)
+    value_byte = bytes(value_string, 'utf-8')
+    new_cs = hashlib.md5(value_byte).digest()
+    RawBlocks.cs_block[block_number] = new_cs
     return 0
 
   server.register_function(Put)
